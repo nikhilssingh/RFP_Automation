@@ -1,0 +1,4 @@
+# Exclude the virtual environment folder
+venv/
+
+
