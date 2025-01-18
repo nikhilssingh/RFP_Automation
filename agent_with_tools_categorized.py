@@ -1,100 +1,136 @@
 # agent_with_tools_categorized.py
 import os
 from dotenv import load_dotenv
+
 load_dotenv()
+
+# Pinecone / VectorStore
 from pinecone import Pinecone
 from langchain_pinecone import PineconeVectorStore as LCPinecone
+
+# LangChain Agents & Tools
 from langchain.agents import initialize_agent, AgentType
 from langchain_openai import ChatOpenAI
 from langchain.tools import BaseTool
 from pydantic import Field
 from typing import Any
+
 from embeddings_setup import embeddings
 
+# PDF generation
+from fpdf import FPDF
+import PyPDF2
+
+
+
 class PineconeSearchTool(BaseTool):
-    name: str = "pinecone_retrieval"  
-    description: str = "Use this tool to retrieve relevant documents from Pinecone." 
-    vector_store: Any = Field(...)  
+    """
+    Retrieves relevant documents from Pinecone. 
+    We will then summarize these docs with a separate function or chain.
+    """
+    name: str = "pinecone_retrieval"
+    description: str = "Use this tool to retrieve relevant response to RFP documents from Pinecone."
+    vector_store: Any = Field(...)
 
     def _run(self, query: str) -> str:
         docs = self.vector_store.similarity_search(query, k=2)
-        if not docs:  
+        if not docs:
             return "No relevant documents found."
-        
+
         combined_text = "\n".join([d.page_content for d in docs])
-        if "irrelevant" in combined_text.lower():  
-            return "Retrieved documents are not relevant to the query."
         return combined_text
 
     async def _arun(self, query: str) -> str:
         raise NotImplementedError("Async not implemented.")
 
-def categorize_query(query):
-    """Categorize the query into predefined use cases."""
-    if "RFP" in query or "proposal" in query:
-        return "RFP"
-    elif "recruitment" in query or "candidate" in query:
-        return "Recruitment"
-    elif "coding" in query or "evaluation" in query:
-        return "Coding Evaluation"
-    else:
-        return "General"
+def parse_rfp_pdf(pdf_path: str) -> str:
+    """
+    Read and extract all text from the given RFP PDF.
+    Returns the extracted text as a single string.
+    """
+    text = ""
+    with open(pdf_path, "rb") as f:
+        reader = PyPDF2.PdfReader(f)
+        for page in reader.pages:
+            # Extract text from each page and add a newline
+            page_text = page.extract_text()
+            if page_text:
+                text += page_text + "\n"
+    return text.strip()
+def summarize_rfp(llm, text: str) -> str:
+    """
+    Summarize the retrieved response to RFP documents using the LLM.
+    Keep it short, clear, and focused on the main points.
+    """
+    prompt = f"""
+    You are an expert at summarizing response to RFP documents.
+    Please summarize the following RFP text in a concise yet comprehensive way:
 
-def get_prompt_for_use_case(use_case, query, retrieved_info):
-    """Generate a tailored prompt based on the use case."""
-    if use_case == "RFP":
-        return f"Using the following retrieved information, draft an RFP response:\n{retrieved_info}\nQuery: {query}"
-    elif use_case == "Recruitment":
-        return f"Analyze the candidate's data based on this retrieved information:\n{retrieved_info}\nQuery: {query}"
-    elif use_case == "Coding Evaluation":
-        return f"Evaluate the provided code snippet and provide feedback based on the following retrieved information:\n{retrieved_info}\nQuery: {query}"
-    else:  
-        return f"Using the following retrieved information, respond to the query:\n{retrieved_info}\nQuery: {query}"
+    {text}
+    """
+    response = llm.invoke(prompt)
+    return response.content.strip()
 
-# Function to evaluate and enrich the response
-def evaluate_and_enrich_response(prompt: str, llm) -> str:
-    enriched_response = llm.invoke(prompt)
-    return enriched_response.content
+def expand_rfp(llm, summary: str) -> str:
+    prompt = f"""
+    Below is a summarized RFP. Please expand or refine this summary into a 
+    full and comprehensive proposal/response to the RFP. Use professional 
+    language, include critical sections (like objectives, timelines, 
+    budgets, and any relevant technical details).
 
+    Summarized RFP Content:
+    {summary}
+    """
+    response = llm.invoke(prompt)
+    return response.content.strip()
+
+def save_rfp_as_pdf(rfp_text: str, pdf_filename="final_rfp.pdf"):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+
+    # 1) Register a TTF font with 'uni=True'
+    pdf.add_font("DejaVu", "", "DejaVuSansCondensed.ttf", uni=True)
+    # 2) Use that font
+    pdf.set_font("DejaVu", "", 12)
+
+    paragraphs = rfp_text.split("\n\n")
+    for para in paragraphs:
+        pdf.multi_cell(0, 7, para.strip())
+        pdf.ln()
+
+    pdf.output(pdf_filename)
+    print(f"PDF saved as '{pdf_filename}'.")
+
+###############################################################################
+# 5) Main
+###############################################################################
 def main():
-    pc = Pinecone(api_key=os.environ["PINECONE_API_KEY"])
-    index_name = "my-hybrid-index"
-
-    index = pc.Index(index_name)
-
-    vectorstore = LCPinecone(index=index, embedding=embeddings)
-
-    pinecone_tool = PineconeSearchTool(vector_store=vectorstore)
-
+    # 1) Load the Large Language Model
     llm = ChatOpenAI(
         openai_api_key=os.environ["OPENAI_API_KEY"],
-        model_name="gpt-3.5-turbo",
+        # Use your desired model here, e.g., "gpt-4" if you have access
+        model_name="gpt-4o-mini",
         temperature=0.0
     )
-    
-    agent = initialize_agent(
-        tools=[pinecone_tool],
-        llm=llm,
-        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-        verbose=True
-    )
 
-    # Ask a question to the agent
-    questions = ["Create a RFP for a coffee shop that wants to integrate AI in their order mechanism."]
-    
-    for question in questions:
-        retrieved_info = agent.run(question)
+    # 2) Specify the path to the submitted RFP PDF
+    #    In practice, you would get this path from user input, a web form, etc.
+    rfp_pdf_path = "user_rfp.pdf"  # Replace with the actual file path
 
-        if "No relevant documents found." in retrieved_info:
-            fallback_info = "No relevant information found."
-            use_case = categorize_query(question)
-            prompt = get_prompt_for_use_case(use_case, question, fallback_info)
-        else:
-            use_case = categorize_query(question)
-            prompt = get_prompt_for_use_case(use_case, question, retrieved_info)
+    # 3) Parse the PDF to extract RFP text
+    rfp_text = parse_rfp_pdf(rfp_pdf_path)
 
-        response = evaluate_and_enrich_response(prompt, llm)
-        print("Agent Response:", response)
+    # 4) Summarize the RFP
+    rfp_summary = summarize_rfp(llm, rfp_text)
+
+    # 5) Expand the summary into a comprehensive proposal/response
+    final_rfp_text = expand_rfp(llm, rfp_summary)
+
+    # 6) Save the final response as a PDF
+    save_rfp_as_pdf(final_rfp_text, pdf_filename="response_to_rfp.pdf")
+
+    print("\n----- Done. The response to RFP has been generated and saved as PDF. -----\n")
 
 if __name__ == "__main__":
     main()
