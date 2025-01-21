@@ -29,6 +29,9 @@ logging.basicConfig(level=logging.INFO)
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
+# Performance
+import time
+
 
 class PineconeSearchTool(BaseTool):
     """
@@ -272,7 +275,10 @@ def main():
             model_name="gpt-4o-mini",
             temperature=0.0
         )
-
+        
+        # Track start time for the process
+        process_start_time = time.time()
+        
         rfp_pdf_path = "user_rfp.pdf"
         rfp_text = parse_rfp_pdf(rfp_pdf_path)
         if "Error:" in rfp_text:
@@ -286,11 +292,17 @@ def main():
             logging.warning("No past RFPs loaded. Complexity scoring will omit semantic similarity.")
 
         complexity_score = compute_rfp_complexity(rfp_text,past_rfps)
+        logging.info(f"Complexity Score Computed: {complexity_score}")
         
+        # Summarization Step
+        summarization_start = time.time()
         rfp_summary = summarize_rfp(llm, rfp_text, complexity_score)
+        summarization_time = time.time() - summarization_start
+        logging.info(f"Summarization Time: {summarization_time:.2f} seconds")
         if "Error:" in rfp_summary:
             logging.error(f"Terminating process due to summarization error: {rfp_summary}")
             return
+        logging.info("Summarization successful.")
         
         # Save Summary for Review
         summary_draft_file = "summary_draft.txt"
@@ -302,10 +314,15 @@ def main():
             logging.error(f"Terminating process due to error in loading reviewed summary: {rfp_summary}")
             return
 
+        # Proposal Generation Step
+        proposal_start = time.time()
         final_rfp_text = expand_rfp(llm, rfp_summary, complexity_score)
+        proposal_time = time.time() - proposal_start
+        logging.info(f"Proposal Generation Time: {proposal_time:.2f} seconds")
         if "Error:" in final_rfp_text:
             logging.error(f"Terminating process due to expansion error: {final_rfp_text}")
             return
+        logging.info("Proposal generation successful.")
 
         # Save Proposal for Review
         proposal_draft_file = "proposal_draft.txt"
@@ -318,7 +335,11 @@ def main():
             return
         
         save_rfp_as_pdf(final_rfp_text, pdf_filename="response_to_rfp.pdf")
-        logging.info("Response to RFP processing completed successfully.")
+        logging.info("Final proposal saved as PDF successfully.")
+        
+        # Log total process time
+        total_process_time = time.time() - process_start_time
+        logging.info(f"Total Process Time: {total_process_time:.2f} seconds")
         
     except Exception as e:
         logging.error(f"Unexpected error in main: {e}")

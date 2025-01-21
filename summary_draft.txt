@@ -37,33 +37,33 @@ Proposals must include:
 - Completion Target: September 20XX  
 
 **6. Budget:**  
-Preliminary budget of $150,000 – $250,000 for the first phase of AI integration.
+Preliminary budget of $150,000 – $250,000 for the first phase, covering production optimization, basic chatbot functionality, and essential data analytics.
 
 **7. Submission Requirements:**  
 Interested bidders should provide:  
 - Executive summary  
-- Company profile  
+- Company profile and relevant experience  
 - Proposed methodology  
-- Implementation plan  
+- Implementation plan and timeline  
 - Team composition  
 - Cost proposal  
 - References  
 
 **8. Evaluation Criteria:**  
 Proposals will be evaluated based on:  
-- Technical expertise (40%)  
+- Technical expertise and proposed solution (40%)  
 - Relevant experience (20%)  
 - Cost-effectiveness (20%)  
 - Implementation timeline (10%)  
 - Cultural/strategic fit (10%)  
 
-**9. Proposal Submission Instructions:**  
+**9. Submission Instructions:**  
 - Format: PDF or Word  
-- Submit to: rfp@potteryworks.com with subject "AI Integration Proposal – [Your Company Name]"  
-- Deadline: 11:59 PM (PST) on February 15, 20XX  
+- Email to rfp@potteryworks.com with subject "AI Integration Proposal – [Your Company Name]"  
+- Deadline: February 15, 20XX, by 11:59 PM (PST)  
 
 **10. Terms & Conditions:**  
-PotteryWorks reserves the right to reject proposals and negotiate terms. Submitted materials become property of PotteryWorks.
+PotteryWorks reserves the right to reject proposals and negotiate terms. Submitted materials become property of PotteryWorks for evaluation purposes.
 
 **Conclusion:**  
 PotteryWorks looks forward to proposals that will help integrate AI solutions into its operations.
