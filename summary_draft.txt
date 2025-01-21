@@ -1,0 +1,69 @@
+**Summary of PotteryWorks AI Integration RFP**
+
+**Issued By:** PotteryWorks Inc., Clayville  
+**Contact:** rfp@potteryworks.com | (555) 123-4567  
+**Issue Date:** January 10, 20XX  
+**Proposal Due Date:** February 15, 20XX  
+
+**1. Company Background:**  
+PotteryWorks Inc. is a 30-year-old artisanal pottery studio focused on handmade ceramic products. The company seeks to enhance competitiveness through AI integration in production, customer experience, and business operations.
+
+**2. Purpose of the RFP:**  
+PotteryWorks invites qualified firms to propose AI solutions aimed at:  
+- **Production Optimization:** Predictive maintenance, demand forecasting, and inventory management.  
+- **Customer Experience Enhancement:** AI-driven recommendations, chatbots, and virtual showrooms.  
+- **Business Intelligence & Data Analytics:** Data collection and analysis for informed decision-making.
+
+**3. Project Scope:**  
+- **Production AI Integration:** Implement machine learning for predictive maintenance and inventory forecasting.  
+- **Customer-Facing Solutions:** Develop a chatbot for customer inquiries and explore virtual showroom options.  
+- **Data Analytics & Reporting:** Utilize AI for customer segmentation, demand prediction, and pricing strategies.
+
+**4. Deliverables:**  
+Proposals must include:  
+- Detailed project plan  
+- Technical architecture overview  
+- Data strategy for compliance  
+- Integration strategy with existing systems  
+- Training and change management plan  
+- Project governance structure  
+
+**5. Project Timeline:**  
+- RFP Issuance: January 10, 20XX  
+- Proposal Deadline: February 15, 20XX  
+- Vendor Presentations: March 1-15, 20XX  
+- Final Selection: March 31, 20XX  
+- Project Kick-off: April 15, 20XX  
+- Completion Target: September 20XX  
+
+**6. Budget:**  
+Preliminary budget of $150,000 – $250,000 for the first phase of AI integration.
+
+**7. Submission Requirements:**  
+Interested bidders should provide:  
+- Executive summary  
+- Company profile  
+- Proposed methodology  
+- Implementation plan  
+- Team composition  
+- Cost proposal  
+- References  
+
+**8. Evaluation Criteria:**  
+Proposals will be evaluated based on:  
+- Technical expertise (40%)  
+- Relevant experience (20%)  
+- Cost-effectiveness (20%)  
+- Implementation timeline (10%)  
+- Cultural/strategic fit (10%)  
+
+**9. Proposal Submission Instructions:**  
+- Format: PDF or Word  
+- Submit to: rfp@potteryworks.com with subject "AI Integration Proposal – [Your Company Name]"  
+- Deadline: 11:59 PM (PST) on February 15, 20XX  
+
+**10. Terms & Conditions:**  
+PotteryWorks reserves the right to reject proposals and negotiate terms. Submitted materials become property of PotteryWorks.
+
+**Conclusion:**  
+PotteryWorks looks forward to proposals that will help integrate AI solutions into its operations.
