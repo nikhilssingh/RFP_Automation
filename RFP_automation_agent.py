@@ -1,12 +1,14 @@
-# agent_with_tools_categorized.py
+# RFP_automation_agent.py
+
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
 # Pinecone / VectorStore
-from pinecone import Pinecone
+from pinecone import Pinecone, ServerlessSpec, Index
 from langchain_pinecone import PineconeVectorStore as LCPinecone
+from langchain_pinecone import PineconeVectorStore
 
 # LangChain Agents & Tools
 from langchain.agents import initialize_agent, AgentType
@@ -32,6 +34,15 @@ from sklearn.metrics.pairwise import cosine_similarity
 # Performance
 import time
 
+
+# Initialize Pinecone Vector Store
+index_name = "my-hybrid-index"  # Same as in store_in_pinecone.py
+index = Index(
+    api_key=os.getenv("PINECONE_API_KEY"),
+    host=os.getenv("PINECONE_HOST"),
+    name=index_name
+)
+vectorstore = LCPinecone(index=index, embedding=embeddings)
 
 class PineconeSearchTool(BaseTool):
     """
@@ -172,9 +183,13 @@ def parse_rfp_pdf(pdf_path: str) -> str:
         logging.error(f"Error reading PDF {pdf_path}: {e}")
         return f"Error: Unable to process the PDF due to {str(e)}."
     
-def summarize_rfp(llm, text: str, complexity: int) -> str:
+def summarize_rfp(llm, rfp_text: str, retrieved_docs: str, complexity: int) -> str:
     """
-    Summarize the retrieved RFP documents using the LLM with adjustments for complexity.
+    Summarize the new RFP with an emphasis on its content and use retrieved documents as context and use the retrieved documents to identify 
+    common themes or successful practices and integrate them where relevant.
+    Also, use the retrieved documents for style and structure reference.
+    Ensure the summary is concise, professional, and free from unnecessary repetition.
+    Adjust the level of detail based on the complexity score.
     """
     try:
         if complexity >= 4:
@@ -186,9 +201,14 @@ def summarize_rfp(llm, text: str, complexity: int) -> str:
 
         prompt = f"""
         You are an expert at summarizing RFP documents. Provide a {detail_level} summary 
-        of the following RFP text:
+        focusing on the following new RFP with an emphasis on its content. Use the retrieved documents as additional context to identify 
+        common themes or successful practices and integrate them where relevant:
 
-        {text}
+        New RFP:
+        {rfp_text}
+
+        Context (Old Proposals):
+        {retrieved_docs}
         """
         response = llm.invoke(prompt)
         return response.content.strip()
@@ -294,9 +314,26 @@ def main():
         complexity_score = compute_rfp_complexity(rfp_text,past_rfps)
         logging.info(f"Complexity Score Computed: {complexity_score}")
         
+        # Add Retrieval Logic
+        retrieval_tool = PineconeSearchTool(vector_store=vectorstore)
+
+        # Retrieve related proposals
+        retrieval_start = time.time()
+        retrieved_docs = retrieval_tool._run(rfp_text)
+        retrieval_time = time.time() - retrieval_start
+        logging.info(f"Document Retrieval Time: {retrieval_time:.2f} seconds")
+
+        # Combine retrieved content with the RFP text
+        combined_rfp_text = f"{retrieved_docs}\n\n{rfp_text}"
+        
         # Summarization Step
         summarization_start = time.time()
-        rfp_summary = summarize_rfp(llm, rfp_text, complexity_score)
+        rfp_summary = summarize_rfp(
+            llm=llm,
+            rfp_text=rfp_text,
+            retrieved_docs=retrieved_docs,
+            complexity=complexity_score
+        )
         summarization_time = time.time() - summarization_start
         logging.info(f"Summarization Time: {summarization_time:.2f} seconds")
         if "Error:" in rfp_summary:
@@ -316,7 +353,7 @@ def main():
 
         # Proposal Generation Step
         proposal_start = time.time()
-        final_rfp_text = expand_rfp(llm, rfp_summary, complexity_score)
+        final_rfp_text = expand_rfp(llm, f"{retrieved_docs}\n\n{rfp_summary}", complexity_score)
         proposal_time = time.time() - proposal_start
         logging.info(f"Proposal Generation Time: {proposal_time:.2f} seconds")
         if "Error:" in final_rfp_text:

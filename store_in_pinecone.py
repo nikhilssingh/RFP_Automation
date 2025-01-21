@@ -10,9 +10,17 @@ from embeddings_setup import embeddings
 import PyPDF2
 import pinecone
 
+# Retrieve API key and host
+pinecone_api_key = os.getenv("PINECONE_API_KEY")
+pinecone_host = os.getenv("PINECONE_HOST")
+
 pc = Pinecone(
     api_key=os.environ["PINECONE_API_KEY"],
 )
+
+# Validate the variables
+if not pinecone_api_key or not pinecone_host:
+    raise ValueError("PINECONE_API_KEY or PINECONE_HOST is missing. Check your .env file.")
 
 index_name = "my-hybrid-index"  
 all_indexes = pc.list_indexes().names()
