@@ -239,6 +239,31 @@ def save_rfp_as_pdf(rfp_text: str, pdf_filename="final_rfp.pdf"):
         logging.info(f"PDF saved as '{pdf_filename}'.")
     except Exception as e:
         logging.error(f"Error saving PDF '{pdf_filename}': {e}")
+        
+def save_draft_for_review(content: str, filename: str) -> None:
+    """
+    Save the generated content as a draft for human review.
+    """
+    try:
+        with open(filename, 'w', encoding='utf-8') as file:
+            file.write(content)
+        logging.info(f"Draft saved for review: {filename}")
+    except Exception as e:
+        logging.error(f"Error saving draft for review {filename}: {e}")
+
+
+def load_reviewed_content(filename: str) -> str:
+    """
+    Load the reviewed content after human review.
+    """
+    try:
+        with open(filename, 'r', encoding='utf-8') as file:
+            reviewed_content = file.read()
+        logging.info(f"Reviewed content loaded from {filename}")
+        return reviewed_content
+    except Exception as e:
+        logging.error(f"Error loading reviewed content from {filename}: {e}")
+        return "Error: Unable to load reviewed content."
 
 def main():
     try:
@@ -266,14 +291,35 @@ def main():
         if "Error:" in rfp_summary:
             logging.error(f"Terminating process due to summarization error: {rfp_summary}")
             return
+        
+        # Save Summary for Review
+        summary_draft_file = "summary_draft.txt"
+        save_draft_for_review(rfp_summary, summary_draft_file)
+        logging.info(f"Waiting for human review of the summary saved in {summary_draft_file}.")
+        input("Press Enter once the summary review is complete and saved.")  # Pause for review
+        rfp_summary = load_reviewed_content(summary_draft_file)
+        if "Error:" in rfp_summary:
+            logging.error(f"Terminating process due to error in loading reviewed summary: {rfp_summary}")
+            return
 
         final_rfp_text = expand_rfp(llm, rfp_summary, complexity_score)
         if "Error:" in final_rfp_text:
             logging.error(f"Terminating process due to expansion error: {final_rfp_text}")
             return
 
+        # Save Proposal for Review
+        proposal_draft_file = "proposal_draft.txt"
+        save_draft_for_review(final_rfp_text, proposal_draft_file)
+        logging.info(f"Waiting for human review of the proposal saved in {proposal_draft_file}.")
+        input("Press Enter once the proposal review is complete and saved.")  # Pause for review
+        final_rfp_text = load_reviewed_content(proposal_draft_file)
+        if "Error:" in final_rfp_text:
+            logging.error(f"Terminating process due to error in loading reviewed proposal: {final_rfp_text}")
+            return
+        
         save_rfp_as_pdf(final_rfp_text, pdf_filename="response_to_rfp.pdf")
         logging.info("Response to RFP processing completed successfully.")
+        
     except Exception as e:
         logging.error(f"Unexpected error in main: {e}")
 
