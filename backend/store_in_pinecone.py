@@ -1,4 +1,4 @@
-# store_in_pinecone.py
+# backend/store_in_pinecone.py
 
 import os
 from dotenv import load_dotenv
@@ -7,6 +7,17 @@ from pinecone import Pinecone, ServerlessSpec, Index
 from langchain_pinecone import PineconeVectorStore as LCPinecone
 from langchain.schema import Document
 from embeddings_setup import embeddings
+
+# ✅ Verify Embedding Dimensions
+test_text = "Test embedding"
+test_vector = embeddings.embed_query(test_text)
+
+print(f"🔍 Debug: Generated embedding vector shape: {len(test_vector)}")  # Should print 1536
+
+# If this prints 384, the embedding model is incorrect.
+if len(test_vector) != 1536:
+    raise ValueError(f"❌ Embedding model mismatch! Expected 1536 but got {len(test_vector)}. Check `embeddings_setup.py`.")
+
 import PyPDF2
 import pinecone
 
@@ -116,6 +127,6 @@ documents = [Document(page_content=txt) for txt in docs_texts]
 vectorstore = LCPinecone.from_documents(
     documents=documents,
     embedding=embeddings,
-    index_name="proposals-index"
+    index_name="my-proposals-index"
 )
 print("Documents uploaded to Pinecone!")

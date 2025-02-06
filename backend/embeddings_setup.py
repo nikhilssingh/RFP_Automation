@@ -1,4 +1,4 @@
-# embeddings_setup.py
+# backend/embeddings_setup.py
 
 from langchain_openai import OpenAIEmbeddings
 
