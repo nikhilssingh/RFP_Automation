@@ -5,6 +5,8 @@ load_dotenv()
 from langchain_openai import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationChain
+from langchain.memory import ConversationBufferMemory
+from langchain.chains import LLMChain
 
 openai_api_key = os.getenv("OPENAI_API_KEY")
 
@@ -79,3 +81,40 @@ def expand_rfp(rfp_text, retrieved_docs):
 
     response = llm.invoke(prompt)
     return response.content.strip()
+
+
+# Maintain memory for ongoing refinements
+conversation_memory = {"latest_proposal": ""}
+
+def refine_proposal(existing_proposal: str, user_feedback: str) -> str:
+    """
+    Refines the latest generated proposal based on user feedback.
+    """
+    current_proposal = conversation_memory.get("latest_proposal", "")
+    
+    if not current_proposal:
+        return "No proposal available. Please generate one first."
+    
+    prompt = f"""
+    You are an expert proposal writer refining a business proposal based on user feedback.
+    
+    ---
+    **Current Proposal:**
+    {current_proposal}
+    
+    **User Feedback:**
+    {user_feedback}
+    
+    **Instructions:**
+    - Improve clarity, conciseness, and persuasiveness.
+    - Address specific concerns raised by the user.
+    - Maintain a professional and structured format.
+    """
+    
+    response = llm.invoke(prompt)
+    
+    # 🔄 Update memory with refined proposal
+    refined_proposal = response.content.strip()
+    conversation_memory["latest_proposal"] = refined_proposal
+    
+    return refined_proposal
