@@ -3,7 +3,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from backend.llm_utils import expand_rfp
-from backend.rfp_processor import compute_rfp_complexity
 from backend.pinecone_utils import retrieve_similar_docs
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
@@ -36,11 +35,8 @@ def generate_proposal(request: RFPRequest):
 
         print("\n🔍 **Retrieved Documents for RAG:**\n", retrieved_docs)  # ✅ Debugging
 
-        # ✅ Step 2: Compute Complexity Score (Optional but useful for scaling)
-        complexity = compute_rfp_complexity(rfp_text, past_rfps=retrieved_docs)
-
-        # ✅ Step 3: Generate a Proposal Based on Full RFP & Retrieved Context
-        proposal = expand_rfp(rfp_text, retrieved_docs, complexity)
+        # ✅ Step 2: Generate a Proposal Based on Full RFP & Retrieved Context
+        proposal = expand_rfp(rfp_text, retrieved_docs)
 
         return {
             "proposal": proposal,
