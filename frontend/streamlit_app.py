@@ -23,7 +23,6 @@ if uploaded_file:
         extracted_rfp_text = result["extracted_text"]
         st.success(f"✅ File Uploaded: {result['filename']}")
         st.write("📜 **Extracted Text Preview:**", extracted_rfp_text[:500])
-        st.write("📊 **Complexity Score:**", result["complexity_score"])
     else:
         st.error(f"❌ Error uploading file: {response.text}")
 

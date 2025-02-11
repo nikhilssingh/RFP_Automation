@@ -20,7 +20,7 @@ index_name = "my-proposals-index"
 index = Index(api_key=pinecone_api_key, host=pinecone_host, name=index_name)
 
 # ✅ Function to retrieve similar documents
-def retrieve_similar_docs(query: str, top_k: int = 2):
+def retrieve_similar_docs(query: str, top_k: int = 3):
     """ Retrieves relevant RFP documents from Pinecone using similarity search. """
     try:
         # ✅ Print embedding shape before querying Pinecone

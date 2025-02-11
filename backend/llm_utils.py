@@ -14,29 +14,22 @@ llm = ChatOpenAI(
     temperature=0.0
 )
 
-def expand_rfp(rfp_text, retrieved_docs, complexity):
-    """ Generates a business proposal in response to an RFP, ensuring past proposal data is effectively reused. """
+def expand_rfp(rfp_text, retrieved_docs):
+    """Generates a thorough business proposal in response to an RFP, ensuring past proposal data is effectively reused."""
     
     structured_context = "\n\n".join([
         f"🔹 **Reference Proposal {i+1}**:\n{doc}" for i, doc in enumerate(retrieved_docs)
     ]) if retrieved_docs else "No similar documents found."
-
-    if complexity >= 4:
-        detail_level = "highly detailed and technical"
-    elif complexity == 3:
-        detail_level = "well-balanced with key details"
-    else:
-        detail_level = "concise and to the point"
         
     prompt = f"""
-    You are a professional business consultant responding to a client’s RFP. Your task is to generate a **{detail_level}** that directly addresses the client's needs.
+    You are a professional business consultant responding to a client’s RFP. Your task is to generate a **thorough business proposal** that directly addresses the client's needs.
 
     ---
     **📜 Client’s RFP to Respond To:**
     {rfp_text}
 
     ---
-    **📂 Past Successful Proposals (USE THESE TO SHAPE THE RESPONSE):**
+    **📂 Past Successful Proposals (USE THESE TO SHAPE THE RESPONSE and fill in the company name, contact information, etc. and structure which is redundant from the past proposals):**
     {structured_context}
 
     ---
