@@ -21,6 +21,7 @@ llm = ChatOpenAI(
 # ✅ Define request model
 class RFPRequest(BaseModel):
     rfp_text: str
+    retrieved_docs: list = []
 
 @proposal_router.post("/generate_proposal")
 def generate_proposal(request: RFPRequest):
@@ -47,6 +48,7 @@ def generate_proposal(request: RFPRequest):
         raise HTTPException(status_code=500, detail=f"Error generating proposal: {str(e)}")
 
 class RefineRequest(BaseModel):
+    current_proposal: str = None  # optional; we fall back to memory if not provided
     user_feedback: str
     
 @proposal_router.post("/refine_proposal")
@@ -54,30 +56,42 @@ def refine_proposal_endpoint(refine_data: RefineRequest):
     """API endpoint to refine the latest proposal based on user feedback."""
     try:
         user_feedback = refine_data.user_feedback
+        current_proposal = refine_data.current_proposal
+
+        # Fallback to conversation memory if current_proposal not provided
+        if not current_proposal:
+            current_proposal = conversation_memory.get("latest_proposal", "")
+            if not current_proposal:
+                raise HTTPException(status_code=400, detail="No existing proposal to refine.")
+
         if not user_feedback:
             raise HTTPException(status_code=400, detail="User feedback is required.")
 
-        # 🔍 Fetch the latest stored proposal
-        latest_proposal = conversation_memory.get("latest_proposal", None)
-        if not latest_proposal:
-            raise HTTPException(status_code=400, detail="No existing proposal to refine.")
+        # Use the conversational refinement function
+        refined_proposal_result = refine_proposal(current_proposal, user_feedback)
 
-        # ✅ Refine based on stored proposal + user feedback
-        refined_proposal_result = refine_proposal(latest_proposal, user_feedback)
+        if "error" in refined_proposal_result:
+            raise HTTPException(status_code=400, detail=refined_proposal_result["error"])
 
-        # 🔄 Store the refined version
-        conversation_memory["latest_proposal"] = refined_proposal_result
+        refined_text = refined_proposal_result["refined_proposal"]
 
-        return {"refined_proposal": refined_proposal_result}
+        # Update memory with just the refined proposal text
+        conversation_memory["latest_proposal"] = refined_text
+
+        return {"refined_proposal": refined_text}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error refining proposal: {str(e)}")
 
+
 class StoreProposalRequest(BaseModel):
     proposal: str
+
+if "latest_proposal" not in conversation_memory:
+    conversation_memory["latest_proposal"] = ""
 
 @proposal_router.post("/store_proposal")
 def store_proposal_endpoint(proposal: StoreProposalRequest):
     """API endpoint to store the latest generated proposal."""
-    conversation_memory["latest_proposal"] = proposal
+    conversation_memory["latest_proposal"] = proposal.proposal
     return {"message": "Proposal stored successfully."}
