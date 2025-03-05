@@ -115,33 +115,31 @@ refine_chain = ConversationChain(
     prompt=refine_prompt_template,
     memory=refine_memory
 )
-
+ 
 def refine_proposal(current_proposal: str, user_feedback: str) -> dict:
-    """
-    Conversational version: Refines the proposal using a conversation chain that preserves prior interactions.
-    If the conversation memory is empty, it initializes it with the current proposal.
-    """
-    # Use the provided proposal or fallback to stored memory.
-    if not current_proposal:
-        current_proposal = conversation_memory.get("latest_proposal", "")
-    
-    if not current_proposal:
-        return {"error": "No proposal available. Please generate one first."}
-    
-    # If this is the first refinement turn, manually add the system message.
-    if not refine_memory.chat_memory.messages:
-        refine_memory.save_context(
-            {"input": "Starting the conversation"},
-            {"output": f"Initial proposal: {current_proposal}"}
-        )
+    # Construct a prompt that combines the current proposal and the user feedback.
+    prompt = f"""
+You are an expert proposal writer. Given the current proposal below and the user feedback provided, generate a refined proposal that incorporates the feedback and improves upon the original.
 
-    # Use the conversation chain to process the new feedback.
-    refined_proposal = refine_chain.predict(input=user_feedback).strip()
+Current Proposal:
+{current_proposal}
+
+User Feedback:
+{user_feedback}
+
+Refined Proposal:
+"""
+    # Call the LLM directly with the new prompt.
+    response = llm.invoke(prompt)
+    refined_proposal = response.content.strip()
     
-    # Update the fallback global memory.
+    # Update the global conversation memory with the new refined proposal.
     conversation_memory["latest_proposal"] = refined_proposal
     
     return {"refined_proposal": refined_proposal}
+
+
+
 
 
 
