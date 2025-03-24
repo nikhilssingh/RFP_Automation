@@ -42,3 +42,6 @@ def retrieve_similar_docs(query: str, top_k: int = 3):
     except Exception as e:
         logging.error(f"❌ Error retrieving documents: {str(e)}")
         return [f"Error retrieving documents: {str(e)}"]
+    
+    
+    
